@@ -57,9 +57,15 @@ def register(username: str, email: str, password: str, role: str = "viewer") -> 
 def login(username: str, password: str) -> bool:
     """Login and get access token."""
     try:
+        # OAuth2PasswordRequestForm expects form data, not JSON
         response = requests.post(
             f"{API_V1}/auth/token",
-            json={"username": username, "password": password}
+            data={
+                "username": username,
+                "password": password,
+                "grant_type": "password"
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
         )
         if response.status_code == 200:
             data = response.json()
@@ -67,10 +73,13 @@ def login(username: str, password: str) -> bool:
             st.session_state.username = username
             return True
         else:
-            error_detail = response.json().get('detail', 'Unknown error')
-            if isinstance(error_detail, list):
-                error_detail = error_detail[0].get('msg', 'Unknown error')
-            st.error(f"Login failed: {error_detail}")
+            try:
+                error_detail = response.json().get('detail', 'Unknown error')
+                if isinstance(error_detail, list):
+                    error_detail = error_detail[0].get('msg', 'Unknown error')
+                st.error(f"Login failed: {error_detail}")
+            except:
+                st.error(f"Login failed: HTTP {response.status_code}")
             return False
     except Exception as e:
         st.error(f"Error connecting to API: {str(e)}")
