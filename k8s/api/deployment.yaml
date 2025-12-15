@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: music-charts
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+    spec:
+      containers:
+      - name: api
+        image: music-charts-api:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        # PostgreSQL connection
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: postgres_user
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: postgres_db
+        - name: POSTGRES_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: postgres_host
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: password
+        # MongoDB connection
+        - name: MONGO_USER
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: mongodb_user
+        - name: MONGO_DB
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: mongodb_db
+        - name: MONGO_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: mongodb_host
+        - name: MONGO_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: password
+        # Redis connection
+        - name: REDIS_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: redis_host
+        - name: REDIS_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: api-config
+              key: redis_port
+        # Construct full URLs
+        - name: DATABASE_URL
+          value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/$(POSTGRES_DB)"
+        - name: MONGODB_URL
+          value: "mongodb://$(MONGO_USER):$(MONGO_PASSWORD)@$(MONGO_HOST):27017/$(MONGO_DB)?authSource=admin"
+        - name: REDIS_URL
+          value: "redis://$(REDIS_HOST):6379/0"
+        # Security
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: api-secret
+              key: secret_key
+        - name: ALGORITHM
+          value: "HS256"
+        - name: ACCESS_TOKEN_EXPIRE_MINUTES
+          value: "30"
+        - name: REFRESH_TOKEN_EXPIRE_DAYS
+          value: "7"
+        ports:
+        - containerPort: 8000
+          name: http
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 40
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
