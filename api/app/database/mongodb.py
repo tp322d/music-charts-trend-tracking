@@ -28,7 +28,6 @@ def get_mongodb_db() -> Database:
     global _db
     if _db is None:
         client = get_mongodb_client()
-        # Extract database name from URL or use default
         db_name = settings.MONGODB_URL.split("/")[-1].split("?")[0]
         if not db_name or db_name == "":
             db_name = "musiccharts"

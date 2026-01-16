@@ -36,7 +36,6 @@ def generate_test_entries(count: int = 100, start_date: date = None) -> List[Dic
             "country": "Global"
         }
         
-        # Add platform-specific data
         if entry["source"] == "Spotify":
             entry["platform_data"] = {"popularity_score": random.randint(0, 100)}
         elif entry["source"] == "YouTube Music":
@@ -44,7 +43,6 @@ def generate_test_entries(count: int = 100, start_date: date = None) -> List[Dic
         
         entries.append(entry)
         
-        # Advance date every 10 entries
         if (i + 1) % 10 == 0:
             current_date += timedelta(days=1)
     
@@ -85,7 +83,6 @@ def register_test_user(api_url: str) -> tuple:
     if response.status_code == 201:
         return (user_data["username"], user_data["password"])
     else:
-        # User might already exist, try to login
         return (user_data["username"], user_data["password"])
 
 
@@ -107,17 +104,14 @@ def main():
     count = int(sys.argv[2]) if len(sys.argv) > 2 else 100
     
     try:
-        # Register or login test user
         print("Setting up test user...")
         username, password = register_test_user(api_url)
         token = login(api_url, username, password)
         print("Authentication successful!")
         
-        # Generate test data
         print(f"Generating {count} test entries...")
         entries = generate_test_entries(count)
         
-        # Import data
         import_test_data(api_url, token, entries)
         
         print("Test data generation complete!")

@@ -31,7 +31,6 @@ def convert_to_api_format(csv_row: Dict) -> Dict:
         "country": csv_row.get("country", "Global")
     }
     
-    # Optional fields
     if csv_row.get("streams"):
         entry["streams"] = int(csv_row.get("streams"))
     if csv_row.get("duration_ms"):
@@ -49,7 +48,6 @@ def import_data(api_url: str, token: str, entries: List[Dict], batch_size: int =
     
     print(f"Starting import of {total} entries...")
     
-    # Process in batches
     for i in range(0, total, batch_size):
         batch = entries[i:i + batch_size]
         batch_formatted = [convert_to_api_format(entry) for entry in batch]
@@ -102,17 +100,14 @@ def main():
     csv_file = sys.argv[4]
     
     try:
-        # Login
         print("Logging in...")
         token = login(api_url, username, password)
         print("Login successful!")
         
-        # Read CSV
         print(f"Reading CSV file: {csv_file}")
         entries = read_csv(csv_file)
         print(f"Found {len(entries)} entries")
         
-        # Import data
         import_data(api_url, token, entries)
         
     except Exception as e:

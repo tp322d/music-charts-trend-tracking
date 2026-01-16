@@ -10,18 +10,15 @@ from datetime import date, datetime, timedelta
 from typing import Optional
 import os
 
-# Configuration
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 API_V1 = f"{API_URL}/api/v1"
 
-# Page configuration
 st.set_page_config(
     page_title="Music Charts Tracking Dashboard",
-    page_icon="🎵",
+    page_icon="music",
     layout="wide"
 )
 
-# Initialize session state
 if "access_token" not in st.session_state:
     st.session_state.access_token = None
 if "username" not in st.session_state:
@@ -57,7 +54,6 @@ def register(username: str, email: str, password: str, role: str = "viewer") -> 
 def login(username: str, password: str) -> bool:
     """Login and get access token."""
     try:
-        # OAuth2PasswordRequestForm expects form data, not JSON
         response = requests.post(
             f"{API_V1}/auth/token",
             data={
@@ -117,25 +113,23 @@ def fetch_charts(date_filter: Optional[date] = None, date_from: Optional[date] =
         if response.status_code == 200:
             return response.json()
         else:
-            # Try to parse error response
             try:
                 error_data = response.json()
                 error_detail = error_data.get('detail', 'Unknown error')
                 if isinstance(error_detail, list):
                     error_detail = error_detail[0].get('msg', 'Unknown error') if error_detail else 'Unknown error'
-                st.error(f"❌ Error fetching charts: {error_detail}")
+                st.error(f"Error fetching charts: {error_detail}")
             except (ValueError, KeyError):
-                # If response is not JSON or empty
-                st.error(f"❌ Error fetching charts: HTTP {response.status_code} - {response.text[:200] if response.text else 'No response body'}")
+                st.error(f"Error fetching charts: HTTP {response.status_code} - {response.text[:200] if response.text else 'No response body'}")
             return []
     except requests.exceptions.Timeout:
-        st.error("⏱️ Request timed out. Please try again.")
+        st.error("Request timed out. Try again.")
         return []
     except requests.exceptions.ConnectionError:
-        st.error("🔌 Connection error. Please check if the API is running.")
+        st.error("Connection error. Check if API is running.")
         return []
     except Exception as e:
-        st.error(f"❌ Error connecting to API: {str(e)}")
+        st.error(f"Error connecting to API: {str(e)}")
         return []
 
 
@@ -158,18 +152,18 @@ def fetch_top_charts(selected_date: date, source: Optional[str] = None,
                 error_detail = response.json().get('detail', 'Unknown error')
                 if isinstance(error_detail, list):
                     error_detail = error_detail[0].get('msg', 'Unknown error') if error_detail else 'Unknown error'
-                st.error(f"❌ Error fetching top charts: {error_detail}")
+                st.error(f"Error fetching top charts: {error_detail}")
             except:
-                st.error(f"❌ Error fetching top charts: HTTP {response.status_code}")
+                st.error(f"Error fetching top charts: HTTP {response.status_code}")
             return []
     except requests.exceptions.Timeout:
-        st.error("⏱️ Request timed out. Please try again.")
+        st.error("Request timed out. Try again.")
         return []
     except requests.exceptions.ConnectionError:
-        st.error("🔌 Connection error. Please check if the API is running.")
+        st.error("Connection error. Check if API is running.")
         return []
     except Exception as e:
-        st.error(f"❌ Error connecting to API: {str(e)}")
+        st.error(f"Error connecting to API: {str(e)}")
         return []
 
 
@@ -196,13 +190,11 @@ def fetch_trends(days: int = 30, source: Optional[str] = None) -> list:
 
 def main():
     """Main dashboard application."""
-    st.title("🎵 Music Charts Tracking Dashboard")
+    st.title("Music Charts Tracking Dashboard")
     
-    # Login/Register section
     if not st.session_state.access_token:
         st.sidebar.header("Authentication")
         
-        # Tabs for Login and Register
         auth_tab = st.sidebar.radio("Choose option", ["Login", "Register"], horizontal=True)
         
         if auth_tab == "Login":
@@ -217,7 +209,7 @@ def main():
                 else:
                     st.sidebar.warning("Please enter both username and password")
         
-        else:  # Register
+        else:
             st.sidebar.subheader("Register New User")
             reg_username = st.sidebar.text_input("Username", key="reg_username", help="3-50 characters, alphanumeric")
             reg_email = st.sidebar.text_input("Email", key="reg_email", help="Valid email address")
@@ -241,7 +233,6 @@ def main():
             st.session_state.username = None
             st.rerun()
         
-        # Navigation
         page = st.sidebar.selectbox("Select Page", ["Top Charts", "Chart History", "Trend Analysis", "Data Export"])
         
         if page == "Top Charts":
@@ -284,8 +275,7 @@ def show_top_charts():
     """Display top charts page."""
     st.header("Top Charts")
     
-    # Quick data fetch section
-    with st.expander("📥 Need Data? Fetch iTunes Charts First", expanded=True):
+    with st.expander("Need data? Fetch iTunes charts first", expanded=True):
         col1, col2, col3 = st.columns(3)
         with col1:
             fetch_country = st.selectbox("Country Code", ["us", "gb", "ca", "au", "de", "fr"], key="fetch_country")
@@ -296,18 +286,18 @@ def show_top_charts():
                                     help="0 = today only, 7 = last week, 14 = last 2 weeks, 30 = last month",
                                     key="days_back")
         
-        if st.button("🔄 Fetch iTunes Charts Now", type="primary", use_container_width=True):
+        if st.button("Fetch iTunes charts", type="primary", use_container_width=True):
             with st.spinner(f"Fetching charts from iTunes for {days_back + 1} days..."):
                 success, imported, skipped, fetched, error, days_created = fetch_itunes_data(fetch_country, fetch_limit, days_back)
                 if success:
                     if days_back > 0:
-                        st.success(f"✅ Successfully imported {imported} entries across {days_created} days! (Fetched: {fetched}, Skipped: {skipped})")
-                        st.info(f"💡 Data created for: Today + last {days_back} days. Now you can view trends in Chart History and Trend Analysis pages!")
+                        st.success(f"Imported {imported} entries across {days_created} days (fetched: {fetched}, skipped: {skipped})")
+                        st.info(f"Data created for today and last {days_back} days. Use Chart History and Trend Analysis.")
                     else:
-                        st.success(f"✅ Successfully imported {imported} new entries (Fetched: {fetched}, Skipped: {skipped})")
-                        st.info("💡 Now try fetching top charts below with the date set to today!")
+                        st.success(f"Imported {imported} new entries (fetched: {fetched}, skipped: {skipped})")
+                        st.info("Try fetching top charts below with date set to today.")
                 else:
-                    st.error(f"❌ Failed to fetch: {error}")
+                    st.error(f"Fetch failed: {error}")
     
     st.divider()
     
@@ -322,24 +312,21 @@ def show_top_charts():
     
     limit = st.slider("Number of entries", 10, 100, 20)
     
-    if st.button("🔍 Fetch Top Charts", type="primary", use_container_width=True):
+    if st.button("Fetch top charts", type="primary", use_container_width=True):
         with st.spinner(f"Fetching top charts for {selected_date}" + (f" from {source}" if source else "") + "..."):
             charts = fetch_top_charts(selected_date, source, country if country else None, limit)
             
         if charts and len(charts) > 0:
             df = pd.DataFrame(charts)
             
-            # Display summary
-            st.success(f"✅ Found {len(charts)} chart entries")
+            st.success(f"Found {len(charts)} chart entries")
             
-            # Show data table
             display_cols = ["rank", "song", "artist", "source", "country"]
             if "streams" in df.columns:
                 display_cols.append("streams")
             
             st.dataframe(df[display_cols], use_container_width=True)
             
-            # Visualization
             if len(df) > 0:
                 fig = px.bar(
                     df.head(20),
@@ -353,8 +340,8 @@ def show_top_charts():
                 fig.update_layout(yaxis=dict(autorange="reversed"), height=600, xaxis_title="Song", yaxis_title="Rank")
                 st.plotly_chart(fig, use_container_width=True)
         else:
-            st.warning(f"⚠️ No chart data found for {selected_date}" + (f" from {source}" if source else "") + (f" in {country}" if country else ""))
-            st.info("💡 **Tip:** Click 'Need Data? Fetch iTunes Charts First' above to import chart data, or select a different date.")
+            st.warning(f"No chart data found for {selected_date}" + (f" from {source}" if source else "") + (f" in {country}" if country else ""))
+            st.info("Tip: use the data fetch above, or pick a different date.")
 
 
 def show_chart_history():
@@ -374,20 +361,17 @@ def show_chart_history():
     
     if st.button("Fetch Chart History"):
         with st.spinner(f"Fetching chart history from {date_from} to {date_to}..."):
-            # Use date range to fetch historical data
             charts = fetch_charts(date_filter=None, date_from=date_from, date_to=date_to, 
                                  source=source, country=None, artist=artist, limit=limit)
         
         if charts and len(charts) > 0:
             df = pd.DataFrame(charts)
             
-            # Filter by artist if specified
             if artist:
                 df = df[df["artist"].str.contains(artist, case=False, na=False)]
             
             st.dataframe(df[["date", "rank", "song", "artist", "source", "streams"]])
             
-            # Time series visualization
             if len(df) > 0:
                 df["date"] = pd.to_datetime(df["date"])
                 fig = px.line(
@@ -401,8 +385,8 @@ def show_chart_history():
                 fig.update_layout(yaxis=dict(autorange="reversed"), height=500)
                 st.plotly_chart(fig, use_container_width=True)
         else:
-            st.warning(f"⚠️ No chart data found for the selected date range" + (f" from {source}" if source else "") + (f" by {artist}" if artist else ""))
-            st.info("💡 **Tip:** Try fetching iTunes chart data first using the Top Charts page, or select a different date range.")
+            st.warning(f"No chart data found for the selected date range" + (f" from {source}" if source else "") + (f" by {artist}" if artist else ""))
+            st.info("Tip: fetch iTunes data first on Top Charts page, or pick a different range.")
 
 
 def show_trend_analysis():
@@ -422,7 +406,6 @@ def show_trend_analysis():
             
             st.dataframe(df[["artist", "total_appearances", "average_rank", "best_rank", "trending_score"]])
             
-            # Top artists by trending score
             fig = px.bar(
                 df.head(20),
                 x="artist",
@@ -433,7 +416,6 @@ def show_trend_analysis():
             fig.update_xaxes(tickangle=45)
             st.plotly_chart(fig, use_container_width=True)
             
-            # Average rank visualization
             fig2 = px.scatter(
                 df.head(20),
                 x="total_appearances",
@@ -464,7 +446,6 @@ def show_data_export():
         if charts:
             df = pd.DataFrame(charts)
             
-            # CSV export
             csv = df.to_csv(index=False)
             st.download_button(
                 label="Download CSV",
@@ -473,7 +454,6 @@ def show_data_export():
                 mime="text/csv"
             )
             
-            # Show preview
             st.subheader("Data Preview")
             st.dataframe(df.head(100))
 

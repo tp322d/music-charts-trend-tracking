@@ -36,7 +36,6 @@ class ConnectionManager:
             try:
                 await connection.send_text(message_str)
             except:
-                # Connection might be closed, skip it
                 pass
 
 
@@ -62,23 +61,19 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
     - rank_change: Position change
     - new_entry: Song enters chart
     """
-    # Verify token
     if not await verify_websocket_token(token):
         await websocket.close(code=1008, reason="Invalid authentication token")
         return
     
     await manager.connect(websocket)
     try:
-        # Send welcome message
         await manager.send_personal_message(
             json.dumps({"event": "connected", "message": "Connected to live charts"}),
             websocket
         )
         
-        # Keep connection alive and listen for messages
         while True:
             data = await websocket.receive_text()
-            # Echo back or process client messages if needed
             await manager.send_personal_message(
                 json.dumps({"event": "echo", "data": data}),
                 websocket

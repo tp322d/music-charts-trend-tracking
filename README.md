@@ -1,14 +1,14 @@
 # Music Charts Trend Tracking API
 
-A containerized REST API service that tracks daily music chart data from streaming platforms, providing historical analysis and trend insights.
+Simple API that tracks daily music chart data. It stores history and shows trends.
 
-## 📋 Prerequisites
+## Prerequisites
 
-- **Docker and Docker Compose** (for local development)
-- **Kubernetes cluster** (for production deployment)
-- **kubectl** (for Kubernetes deployment)
+- Docker and Docker Compose (local)
+- Kubernetes cluster (prod)
+- kubectl (for k8s)
 
-## 🏗️ Architecture
+## Architecture
 
 ### System Overview
 
@@ -39,21 +39,21 @@ A containerized REST API service that tracks daily music chart data from streami
 
 ### Components
 
-- **API (FastAPI)**: RESTful API with OAuth2 authentication, handles chart data operations
-- **Dashboard (Streamlit)**: Web-based visualization interface
-- **PostgreSQL**: Relational database for user management and authentication
-- **MongoDB**: NoSQL database for flexible chart data storage
-- **TimescaleDB**: Time-series database for analytics (configured but optional)
-- **Redis**: Caching and rate limiting
+- API (FastAPI): REST API + auth
+- Dashboard (Streamlit): UI
+- PostgreSQL: users/auth
+- MongoDB: chart data
+- TimescaleDB: optional analytics
+- Redis: cache/rate limit
 
 ### Data Flow
 
-1. External APIs (iTunes Charts) → API Service → MongoDB (chart entries)
-2. User requests → API Service → PostgreSQL (authentication) → MongoDB (data retrieval)
-3. API → Dashboard (Streamlit) for visualization
-4. WebSocket connections for real-time updates
+1. iTunes → API → MongoDB (chart entries)
+2. User requests → API → Postgres auth → MongoDB data
+3. API → Dashboard for charts
+4. WebSocket for live updates
 
-## 🚀 Setup
+## Setup
 
 ### Local Development (Docker Compose)
 
@@ -62,24 +62,24 @@ A containerized REST API service that tracks daily music chart data from streami
    docker-compose up -d
    ```
 
-2. **Verify services are running**
+2. **Check services**
    ```bash
    docker-compose ps
-   # All services should show "Up" status
+   # expect "Up"
    ```
 
 3. **Check API health**
    ```bash
    curl http://localhost:8000/health
-   # Should return: {"status":"healthy","service":"music-charts-api"}
+   # expect {"status":"healthy","service":"music-charts-api"}
    ```
 
-4. **Access services**
+4. **Open services**
    - **API Documentation**: http://localhost:8000/docs
    - **Dashboard**: http://localhost:8501
    - **API**: http://localhost:8000
 
-5. **Create a user** (via API or Dashboard)
+5. **Create a user** (API or Dashboard)
    ```bash
    curl -X POST "http://localhost:8000/api/v1/auth/register" \
      -H "Content-Type: application/json" \
@@ -88,7 +88,7 @@ A containerized REST API service that tracks daily music chart data from streami
 
 ### Environment Variables
 
-For Docker Compose, environment variables are configured in `compose.yml`. For Kubernetes, see the deployment section below.
+For Docker Compose, env vars are in `compose.yml`. For Kubernetes, see deploy section.
 
 Key variables:
 - `DATABASE_URL`: PostgreSQL connection string
@@ -97,7 +97,7 @@ Key variables:
 - `SECRET_KEY`: JWT signing key (minimum 32 characters)
 - `ACCESS_TOKEN_EXPIRE_MINUTES`: Token expiration time
 
-## 🚢 Deployment
+## Deployment
 
 ### Kubernetes Deployment
 
@@ -108,7 +108,7 @@ chmod +x k8s/deploy.sh
 ./k8s/deploy.sh
 ```
 
-This script will:
+Script does:
 1. Build Docker images
 2. Create Kubernetes namespace
 3. Deploy secrets and configmaps
@@ -124,7 +124,7 @@ This script will:
    docker build -t music-charts-dashboard:latest ./dashboard
    ```
 
-2. **Load images into cluster** (for local clusters)
+2. **Load images into cluster** (local only)
    ```bash
    # Docker Desktop Kubernetes (automatic)
    # Minikube
@@ -135,7 +135,7 @@ This script will:
    kind load docker-image music-charts-dashboard:latest --name <cluster-name>
    ```
 
-   **For production**: Push to container registry and update image names in deployment YAMLs
+   For prod: push to registry and update image names in YAMLs
 
 3. **Create namespace**
    ```bash
@@ -175,7 +175,7 @@ This script will:
 
 #### Access Services in Kubernetes
 
-Since services use `ClusterIP` type, use port-forwarding for local access:
+Services are `ClusterIP`, use port-forward for local access:
 
 ```bash
 # Option 1: Use the port-forward script
@@ -187,20 +187,20 @@ kubectl port-forward svc/api 8000:8000 -n music-charts
 kubectl port-forward svc/dashboard 8501:8501 -n music-charts
 ```
 
-Then access:
+Then open:
 - **API**: http://localhost:8000/docs
 - **Dashboard**: http://localhost:8501
 
 #### Verify Deployment
 
 ```bash
-# Check all resources
+# all resources
 kubectl get all -n music-charts
 
-# Check pod status
+# pod status
 kubectl get pods -n music-charts
 
-# View logs
+# logs
 kubectl logs -f deployment/api -n music-charts
 kubectl logs -f deployment/dashboard -n music-charts
 ```
@@ -211,7 +211,7 @@ kubectl logs -f deployment/dashboard -n music-charts
 kubectl delete namespace music-charts
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 .
@@ -241,10 +241,10 @@ kubectl delete namespace music-charts
 └── README.md
 ```
 
-## 🔐 Security
+## Security
 
-- OAuth2 JWT authentication
-- Password hashing with bcrypt
-- Role-based access control (Admin, Editor, Viewer)
-- Environment variables for sensitive data
-- Input validation on all endpoints
+- OAuth2 JWT
+- bcrypt passwords
+- roles (admin/editor/viewer)
+- secrets in env vars
+- input validation

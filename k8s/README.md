@@ -1,22 +1,21 @@
 # Kubernetes Deployment Guide
 
-Complete guide for deploying the Music Charts Tracking application to Kubernetes.
+Guide to deploy Music Charts Tracking on Kubernetes.
 
-## 📋 Prerequisites
+## Prerequisites
 
-1. **Kubernetes Cluster** (1.24+)
-   - Minikube, Kind, or cloud provider (GKE, EKS, AKS)
-   - kubectl configured and connected
+1. Kubernetes cluster (1.24+)
+   - minikube/kind or cloud
+   - kubectl working
 
-2. **Docker Images**
-   - Build and push images to a container registry
-   - Or use local images (for minikube/kind)
+2. Docker images
+   - build and push, or use local images
 
-3. **Required Components**
-   - Ingress Controller (optional, for external access)
-   - StorageClass (for persistent volumes)
+3. Required parts
+   - ingress controller (optional)
+   - storageclass for PV
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────┐
@@ -40,58 +39,58 @@ Complete guide for deploying the Music Charts Tracking application to Kubernetes
 └────────┘└────────┘└────────┘└──────┘└──────┘
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
-### Option 1: Automated Deployment (Recommended)
+### Option 1: run script
 
 ```bash
 chmod +x k8s/deploy.sh
 ./k8s/deploy.sh
 ```
 
-### Option 2: Manual Deployment
+### Option 2: manual steps
 
-1. **Create Namespace**
+1. Create namespace
    ```bash
    kubectl apply -f k8s/namespace.yaml
    ```
 
-2. **Create Secrets and ConfigMaps**
+2. Create secrets and configmaps
    ```bash
    kubectl apply -f k8s/secrets.yaml
    kubectl apply -f k8s/configmaps.yaml
    ```
 
-3. **Deploy Databases**
+3. Deploy databases
    ```bash
    kubectl apply -f k8s/postgres/
    kubectl apply -f k8s/mongodb/
    kubectl apply -f k8s/redis/
    ```
 
-4. **Wait for Databases**
+4. Wait for databases
    ```bash
    kubectl wait --for=condition=ready pod -l app=postgres -n music-charts --timeout=120s
    kubectl wait --for=condition=ready pod -l app=mongodb -n music-charts --timeout=120s
    kubectl wait --for=condition=ready pod -l app=redis -n music-charts --timeout=60s
    ```
 
-5. **Deploy Application**
+5. Deploy app
    ```bash
    kubectl apply -f k8s/api/
    kubectl apply -f k8s/dashboard/
    ```
 
-6. **Deploy Ingress (Optional)**
+6. Deploy ingress (optional)
    ```bash
    kubectl apply -f k8s/ingress/
    ```
 
-## 📦 Building and Pushing Docker Images
+## Building and Pushing Docker Images
 
-Before deploying, you need to build and push your Docker images:
+Build and push images before deploy.
 
-### For Local Development (Minikube/Kind)
+### Local dev (minikube/kind)
 
 ```bash
 # Build locally
@@ -107,7 +106,7 @@ kind load docker-image music-charts-api:latest
 kind load docker-image music-charts-dashboard:latest
 ```
 
-### For Production (Container Registry)
+### Prod (registry)
 
 ```bash
 # Set your registry
@@ -126,9 +125,9 @@ sed -i "s|image: music-charts-api:latest|image: ${REGISTRY}/api:latest|g" k8s/ap
 sed -i "s|image: music-charts-dashboard:latest|image: ${REGISTRY}/dashboard:latest|g" k8s/dashboard/deployment.yaml
 ```
 
-## 🔍 Verification
+## Verification
 
-### Check Deployment Status
+### Check deploy status
 
 ```bash
 # View all resources
@@ -144,7 +143,7 @@ kubectl get svc -n music-charts
 kubectl get ingress -n music-charts
 ```
 
-### View Logs
+### View logs
 
 ```bash
 # API logs
@@ -158,9 +157,9 @@ kubectl logs -f statefulset/postgres -n music-charts
 kubectl logs -f statefulset/mongodb -n music-charts
 ```
 
-### Test Connectivity
+### Test connect
 
-**Option 1: Automatic Port Forwarding (Recommended)**
+**Option 1: port forward scripts**
 
 ```bash
 # Interactive mode (press Ctrl+C to stop)
@@ -173,7 +172,7 @@ kubectl logs -f statefulset/mongodb -n music-charts
 ./k8s/stop-port-forward.sh
 ```
 
-**Option 2: Manual Port Forwarding**
+**Option 2: manual port forward**
 
 ```bash
 # Port forward to test locally
@@ -193,7 +192,7 @@ open http://localhost:8501
 - API Docs: http://localhost:8000/docs
 - Dashboard: http://localhost:8501
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -228,7 +227,7 @@ View HPA status:
 kubectl get hpa -n music-charts
 ```
 
-## 🔐 Security Considerations
+## Security Considerations
 
 ### Production Checklist
 
@@ -257,7 +256,7 @@ kubectl get hpa -n music-charts
    - Use private registries
    - Enable image pull secrets if needed
 
-## 🗄️ Persistent Storage
+## Persistent Storage
 
 StatefulSets (PostgreSQL, MongoDB, Redis) use PersistentVolumeClaims:
 - PostgreSQL: 10Gi
@@ -269,7 +268,7 @@ Ensure your cluster has a StorageClass configured:
 kubectl get storageclass
 ```
 
-## 🔄 Updating Deployment
+## Updating Deployment
 
 ### Rolling Update
 
@@ -291,12 +290,79 @@ kubectl rollout history deployment/api -n music-charts
 kubectl rollout undo deployment/api -n music-charts
 ```
 
-## 🧹 Cleanup
+## Restarting After Docker Restart
 
-### Delete Deployment
+When Docker Desktop restarts, Kubernetes pods don't automatically come back. Use these scripts:
+
+### Full Restart (Recommended)
 
 ```bash
-# Delete everything
+# Full redeployment (checks status, redeploys if needed)
+./k8s/restart.sh
+```
+
+This script:
+- Checks if cluster is accessible
+- Verifies pod status
+- Redeploys everything if pods are missing/not running
+- Waits for services to be ready
+
+### Quick Restart (If Deployments Exist)
+
+```bash
+# Fast restart of existing pods
+./k8s/quick-start.sh
+```
+
+This script:
+- Restarts deployments (triggers pod recreation)
+- Deletes StatefulSet pods (they auto-recreate)
+- Faster than full redeployment
+
+### Manual Restart
+
+```bash
+# Restart specific deployments
+kubectl rollout restart deployment/api -n music-charts
+kubectl rollout restart deployment/dashboard -n music-charts
+
+# Restart StatefulSets (delete pods, they auto-recreate)
+kubectl delete pod -l app=postgres -n music-charts
+kubectl delete pod -l app=mongodb -n music-charts
+kubectl delete pod -l app=redis -n music-charts
+
+# Wait for pods to be ready
+kubectl wait --for=condition=ready pod -l app=postgres -n music-charts --timeout=120s
+kubectl wait --for=condition=ready pod -l app=mongodb -n music-charts --timeout=120s
+```
+
+If the namespace or deployments are completely gone, use `./k8s/deploy.sh` instead.
+
+## Stopping/Cleanup
+
+### Stop Deployment (Recommended)
+
+```bash
+# Interactive script with options
+./k8s/stop.sh
+```
+
+This script provides options to:
+1. **Scale down to 0 replicas** (stops pods, keeps data) - Best for temporary shutdown
+2. **Delete entire namespace** (removes everything including data) - Full cleanup
+3. **Delete specific components** (API, Dashboard, or databases only)
+
+### Manual Commands
+
+```bash
+# Scale down to 0 (stops pods, keeps data)
+kubectl scale deployment api --replicas=0 -n music-charts
+kubectl scale deployment dashboard --replicas=0 -n music-charts
+kubectl scale statefulset postgres --replicas=0 -n music-charts
+kubectl scale statefulset mongodb --replicas=0 -n music-charts
+kubectl scale statefulset redis --replicas=0 -n music-charts
+
+# Delete everything (removes all data)
 kubectl delete namespace music-charts
 
 # Or delete selectively
@@ -305,14 +371,13 @@ kubectl delete -f k8s/dashboard/
 kubectl delete -f k8s/postgres/
 kubectl delete -f k8s/mongodb/
 kubectl delete -f k8s/redis/
-kubectl delete -f k8s/secrets.yaml
-kubectl delete -f k8s/configmaps.yaml
-kubectl delete -f k8s/namespace.yaml
 ```
 
-**Note:** Deleting the namespace removes all resources including persistent volumes (unless they have reclaim policy "Retain").
+**Important Notes:**
+- **Scaling to 0**: Pods stop, but all data and configurations are preserved. Use this for temporary shutdown.
+- **Deleting namespace**: Removes everything including persistent volumes (unless they have reclaim policy "Retain"). Use this for full cleanup.
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Pods Not Starting
 
@@ -358,14 +423,14 @@ kubectl top nodes
 kubectl describe hpa api-hpa -n music-charts
 ```
 
-## 📚 Additional Resources
+## Additional Resources
 
 - [Kubernetes Documentation](https://kubernetes.io/docs/)
 - [StatefulSets](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
 - [ConfigMaps and Secrets](https://kubernetes.io/docs/concepts/configuration/)
 - [Horizontal Pod Autoscaler](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
 
-## 🎯 Production Best Practices
+## Production Best Practices
 
 1. **Monitoring**: Set up Prometheus and Grafana
 2. **Logging**: Use centralized logging (ELK, Loki)

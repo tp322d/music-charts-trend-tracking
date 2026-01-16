@@ -34,7 +34,6 @@ def export_data(api_url: str, token: str, output_file: str,
     entries = response.json()
     print(f"Retrieved {len(entries)} entries")
     
-    # Write to CSV
     if not entries:
         print("No data to export")
         return False
@@ -92,12 +91,10 @@ def main():
     source = sys.argv[6] if len(sys.argv) > 6 else None
     
     try:
-        # Login
         print("Logging in...")
         token = login(api_url, username, password)
         print("Login successful!")
         
-        # Export data
         export_data(api_url, token, output_file, date_filter, source)
         
     except Exception as e:

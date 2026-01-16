@@ -31,7 +31,7 @@ class ChartService:
         collection.create_index([("song", 1)])
         collection.create_index([("source", 1)])
         collection.create_index([("country", 1)])
-        collection.create_index([("created_at", 1)], expireAfterSeconds=63072000)  # 2 years TTL
+        collection.create_index([("created_at", 1)], expireAfterSeconds=63072000)
     
     @staticmethod
     def create_entry(entry: ChartEntryCreate) -> Dict[str, Any]:
@@ -41,13 +41,11 @@ class ChartService:
         collection = db[ChartService.COLLECTION_NAME]
         
         entry_dict = entry.model_dump()
-        # Convert date to string for MongoDB
         if isinstance(entry_dict.get("date"), date):
             entry_dict["date"] = entry_dict["date"].isoformat()
         entry_dict["created_at"] = datetime.utcnow()
         entry_dict["updated_at"] = datetime.utcnow()
         
-        # Handle platform_data if it was added as an attribute (not in model)
         if hasattr(entry, 'platform_data') and entry.platform_data:
             entry_dict.update(entry.platform_data)
         
@@ -71,17 +69,14 @@ class ChartService:
         for idx, entry in enumerate(entries):
             try:
                 entry_dict = entry.model_dump()
-                # Convert date to string for MongoDB
                 if isinstance(entry_dict.get("date"), date):
                     entry_dict["date"] = entry_dict["date"].isoformat()
                 entry_dict["created_at"] = datetime.utcnow()
                 entry_dict["updated_at"] = datetime.utcnow()
                 
-                # Handle platform_data if it was added as an attribute (not in model)
                 if hasattr(entry, 'platform_data') and entry.platform_data:
                     entry_dict.update(entry.platform_data)
                 
-                # Check for duplicates if validation enabled
                 if validate_duplicates:
                     duplicate = collection.find_one({
                         "date": entry_dict["date"],
@@ -128,7 +123,6 @@ class ChartService:
         collection = db[ChartService.COLLECTION_NAME]
         
         filter_dict = {}
-        # Handle date filtering: single date takes precedence, otherwise use date range
         if filter_date:
             filter_dict["date"] = filter_date.isoformat()
         elif date_from or date_to:
@@ -152,10 +146,8 @@ class ChartService:
         entries = []
         for doc in cursor:
             doc["id"] = str(doc["_id"])
-            # Convert date string back to date object for Pydantic
             if "date" in doc and isinstance(doc["date"], str):
                 doc["date"] = date.fromisoformat(doc["date"])
-            # Convert datetime strings back to datetime objects
             if "created_at" in doc and isinstance(doc["created_at"], str):
                 doc["created_at"] = datetime.fromisoformat(doc["created_at"].replace("Z", "+00:00"))
             if "updated_at" in doc and isinstance(doc["updated_at"], str):
@@ -181,10 +173,8 @@ class ChartService:
         entries = []
         for doc in cursor:
             doc["id"] = str(doc["_id"])
-            # Convert date string back to date object for Pydantic
             if "date" in doc and isinstance(doc["date"], str):
                 doc["date"] = date.fromisoformat(doc["date"])
-            # Convert datetime strings back to datetime objects
             if "created_at" in doc and isinstance(doc["created_at"], str):
                 doc["created_at"] = datetime.fromisoformat(doc["created_at"].replace("Z", "+00:00"))
             if "updated_at" in doc and isinstance(doc["updated_at"], str):
@@ -214,10 +204,8 @@ class ChartService:
         entries = []
         for doc in cursor:
             doc["id"] = str(doc["_id"])
-            # Convert date string back to date object for Pydantic
             if "date" in doc and isinstance(doc["date"], str):
                 doc["date"] = date.fromisoformat(doc["date"])
-            # Convert datetime strings back to datetime objects
             if "created_at" in doc and isinstance(doc["created_at"], str):
                 doc["created_at"] = datetime.fromisoformat(doc["created_at"].replace("Z", "+00:00"))
             if "updated_at" in doc and isinstance(doc["updated_at"], str):
@@ -236,10 +224,8 @@ class ChartService:
             doc = collection.find_one({"_id": ObjectId(entry_id)})
             if doc:
                 doc["id"] = str(doc["_id"])
-                # Convert date string back to date object for Pydantic
                 if "date" in doc and isinstance(doc["date"], str):
                     doc["date"] = date.fromisoformat(doc["date"])
-                # Convert datetime strings back to datetime objects
                 if "created_at" in doc and isinstance(doc["created_at"], str):
                     doc["created_at"] = datetime.fromisoformat(doc["created_at"].replace("Z", "+00:00"))
                 if "updated_at" in doc and isinstance(doc["updated_at"], str):
@@ -257,7 +243,6 @@ class ChartService:
         try:
             update_dict = update_data.model_dump(exclude_unset=True)
             
-            # Handle platform_data if it was added as an attribute (not in model)
             platform_data = None
             if hasattr(update_data, 'platform_data'):
                 platform_data = update_data.platform_data
@@ -279,10 +264,8 @@ class ChartService:
             
             if result:
                 result["id"] = str(result["_id"])
-                # Convert date string back to date object for Pydantic
                 if "date" in result and isinstance(result["date"], str):
                     result["date"] = date.fromisoformat(result["date"])
-                # Convert datetime strings back to datetime objects
                 if "created_at" in result and isinstance(result["created_at"], str):
                     result["created_at"] = datetime.fromisoformat(result["created_at"].replace("Z", "+00:00"))
                 if "updated_at" in result and isinstance(result["updated_at"], str):
@@ -336,10 +319,8 @@ class ChartService:
         
         results = []
         for doc in collection.aggregate(pipeline):
-            # Calculate trending score (simple algorithm: appearances / avg_rank)
             trending_score = doc["appearances"] / doc["avg_rank"] if doc["avg_rank"] > 0 else 0
             
-            # Get top songs
             songs_sorted = sorted(doc["songs"], key=lambda x: x["rank"])[:5]
             
             trend_dict = {
@@ -353,7 +334,6 @@ class ChartService:
                 "trending_score": round(trending_score, 2),
             }
             trend = TrendAnalysis(**trend_dict)
-            # Convert to dict and add extra fields for response
             trend_result = trend.model_dump()
             trend_result["top_songs"] = songs_sorted
             trend_result["chart_history"] = doc["songs"][:20]

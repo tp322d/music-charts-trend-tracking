@@ -19,19 +19,7 @@ async def get_top_artists(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Get most successful artists over a time period.
-    
-    Requires authentication.
-    Returns trend analysis with statistics including:
-    - Total appearances
-    - Average rank
-    - Best/worst rank
-    - Trending score
-    - Top songs
-    
-    - **days**: Analysis period (1-365 days)
-    - **source**: Optional platform filter
-    - **min_appearances**: Minimum number of chart appearances
+    Get top artists over a time period.
     """
     chart_service = ChartService()
     source_str = source.value if source else None
@@ -46,16 +34,8 @@ async def get_rising_songs(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Get fastest climbing songs (biggest rank improvements).
-    
-    Requires authentication.
-    Compares current rank with rank from specified period ago.
-    
-    - **period**: Comparison period in days (1-90)
-    - **min_climb**: Minimum rank positions improved
+    Get fastest climbing songs (not implemented).
     """
-    # This would require additional implementation in ChartService
-    # For now, returning empty list as placeholder
     return []
 
 
@@ -67,16 +47,7 @@ async def get_platform_comparison(
     current_user: User = Depends(get_current_active_user)
 ):
     """
-    Compare platforms or countries.
-    
-    Requires authentication.
-    Returns comparative statistics.
-    
-    - **dimension**: Comparison dimension ('source' or 'country')
-    - **date_from**: Start date
-    - **date_to**: End date
+    Compare platforms or countries (not implemented).
     """
-    # This would require additional implementation in ChartService
-    # For now, returning placeholder
     return {"message": "Feature not yet implemented"}
 

@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from typing import Optional, List, Union
 from datetime import date, datetime
 from enum import Enum
-# Removed from __future__ import annotations to avoid recursion issues
 
 
 class ChartSource(str, Enum):
@@ -28,7 +27,6 @@ class ChartEntryBase(BaseModel):
 
 class ChartEntryCreate(ChartEntryBase):
     """Schema for creating a chart entry."""
-    # Note: platform_data is handled separately in the router to avoid Pydantic recursion issues
     pass
 
 
@@ -42,12 +40,11 @@ class ChartEntryUpdate(BaseModel):
     duration_ms: Optional[int] = None
     source: Optional[ChartSource] = None
     country: Optional[str] = None
-    # platform_data handled separately in router
 
 
 class ChartEntryResponse(BaseModel):
     """Schema for chart entry response."""
-    id: str  # MongoDB ObjectId as string
+    id: str
     date: date
     rank: int
     song: str
@@ -59,10 +56,7 @@ class ChartEntryResponse(BaseModel):
     country: str
     created_at: datetime
     updated_at: datetime
-    # platform_data included in response as dict from MongoDB
 
-
-# ChartEntryBatch schema removed - batch creation now handled directly in router
 
 
 class BatchResponse(BaseModel):

@@ -5,22 +5,17 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# Import your models and database configuration
 from app.database.postgres import Base
-from app.models.user import User  # Import all models here
+from app.models.user import User
 from app.core.config import settings
 
-# this is the Alembic Config object
 config = context.config
 
-# Override sqlalchemy.url with settings
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
-# Interpret the config file for Python logging.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Add your model's MetaData object here
 target_metadata = Base.metadata
 
 

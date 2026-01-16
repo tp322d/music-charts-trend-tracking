@@ -7,7 +7,6 @@ import sys
 import os
 from datetime import date
 
-# Add parent directory to path to import from api
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from api.app.services.external_api_service import ExternalAPIService
@@ -38,7 +37,6 @@ def register_user(api_url: str, username: str, password: str, email: str, role: 
     if response.status_code == 201:
         return True
     elif response.status_code == 400:
-        # User might already exist
         return False
     else:
         raise Exception(f"Registration failed: {response.text}")
@@ -48,12 +46,10 @@ def import_entries(api_url: str, token: str, entries):
     """Import chart entries to API."""
     headers = {"Authorization": f"Bearer {token}"}
     
-    # Convert ChartEntryCreate objects to dicts
     entries_dict = [entry.model_dump() for entry in entries]
     
     print(f"Importing {len(entries_dict)} entries...")
     
-    # Import in batches of 100
     batch_size = 100
     total_imported = 0
     
@@ -100,16 +96,13 @@ def main():
     country = sys.argv[5] if len(sys.argv) > 5 else "US"
     
     try:
-        # Try to register user (might already exist)
         print(f"Registering/login user: {username}")
         register_user(api_url, username, password, f"{username}@example.com", "editor")
         
-        # Login
         print("Logging in...")
         token = login(api_url, username, password)
         print("Authentication successful!\n")
         
-        # Fetch data based on source
         entries = []
         
         if source == "all":
@@ -137,13 +130,12 @@ def main():
         
         print(f"\nFetched {len(entries)} chart entries")
         
-        # Import to API
         imported = import_entries(api_url, token, entries)
         
-        print(f"\n✅ Successfully imported {imported} real chart entries!")
+        print(f"\nImported {imported} real chart entries")
         
     except Exception as e:
-        print(f"\n❌ Error: {str(e)}")
+        print(f"\nError: {str(e)}")
         import traceback
         traceback.print_exc()
         sys.exit(1)

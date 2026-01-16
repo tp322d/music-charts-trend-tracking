@@ -20,9 +20,6 @@ async def fetch_all_sources(
     Fetch chart data from iTunes Charts.
     
     Requires Editor or Admin role.
-    No API key required - iTunes Charts is free and public.
-    
-    - **country**: Country code (default: US)
     """
     try:
         entries = ExternalAPIService.fetch_all_sources(country)
@@ -33,7 +30,6 @@ async def fetch_all_sources(
                 detail="No data fetched from iTunes Charts. Check network connectivity."
             )
         
-        # Import entries
         chart_service = ChartService()
         result = chart_service.create_batch(entries, validate_duplicates=True)
         
@@ -62,12 +58,6 @@ async def fetch_itunes(
     Fetch top songs from iTunes Charts.
     
     Requires Editor or Admin role.
-    No API key required - iTunes Charts is free and public.
-    
-    - **country**: Country code (default: us)
-    - **limit**: Number of entries to fetch (default: 200, max: 200)
-    - **days_back**: Number of days to create historical data for (0 = today only, 7 = last week, 30 = last month)
-                      For demo purposes, creates entries for past days using today's chart data
     """
     try:
         entries = ExternalAPIService.fetch_itunes_top_songs(country, min(limit, 200))
@@ -80,7 +70,6 @@ async def fetch_itunes(
         
         chart_service = ChartService()
         
-        # If days_back > 0, create historical entries for demo
         if days_back > 0:
             all_results = {
                 "fetched": len(entries),
@@ -88,14 +77,11 @@ async def fetch_itunes(
                 "skipped": 0
             }
             
-            # Create entries for each day going back
-            for day_offset in range(days_back + 1):  # +1 to include today
+            for day_offset in range(days_back + 1):
                 target_date = date.today() - timedelta(days=day_offset)
                 
-                # Create entries with the target date
                 dated_entries = []
                 for entry in entries:
-                    # Create a new entry with the target date
                     from app.schemas.chart import ChartEntryCreate
                     dated_entry = ChartEntryCreate(
                         date=target_date,
@@ -108,12 +94,10 @@ async def fetch_itunes(
                         streams=entry.streams,
                         duration_ms=entry.duration_ms
                     )
-                    # Copy platform_data if it exists
                     if hasattr(entry, 'platform_data') and entry.platform_data:
                         object.__setattr__(dated_entry, 'platform_data', entry.platform_data)
                     dated_entries.append(dated_entry)
                 
-                # Import entries for this date
                 result = chart_service.create_batch(dated_entries, validate_duplicates=True)
                 all_results["imported"] += result["imported"]
                 all_results["skipped"] += result["skipped"]
@@ -126,7 +110,6 @@ async def fetch_itunes(
                 "days_created": days_back + 1
             }
         else:
-            # Normal single-day fetch
             result = chart_service.create_batch(entries, validate_duplicates=True)
             return {
                 "message": "iTunes data fetched and imported successfully",

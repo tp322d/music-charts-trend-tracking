@@ -44,7 +44,6 @@ async def create_chart_entry(
     body = await request.json()
     platform_data = body.pop("platform_data", None)
     entry = ChartEntryCreate(**body)
-    # Add platform_data to entry object for service to use (bypass Pydantic validation)
     if platform_data:
         object.__setattr__(entry, 'platform_data', platform_data)
     chart_service = ChartService()
@@ -76,12 +75,10 @@ async def create_chart_entries_batch(
             detail="Maximum 1000 entries per batch request"
         )
     
-    # Parse entries and extract platform_data separately
     entries = []
     for entry_data in entries_data:
         platform_data = entry_data.pop("platform_data", None)
         entry = ChartEntryCreate(**entry_data)
-        # Add platform_data to entry object for service to use (bypass Pydantic validation)
         if platform_data:
             object.__setattr__(entry, 'platform_data', platform_data)
         entries.append(entry)
@@ -117,7 +114,6 @@ async def get_charts(
     - **country**: Filter by country code
     - **artist**: Filter by artist name (case-insensitive)
     """
-    # Pass parameters directly to avoid Pydantic validation issues with Optional[date]
     chart_service = ChartService()
     source_str = source.value if source else None
     entries = chart_service.get_entries_direct(
@@ -218,7 +214,6 @@ async def update_chart_entry(
     body = await request.json()
     platform_data = body.pop("platform_data", None)
     update_data = ChartEntryUpdate(**body)
-    # Add platform_data as attribute for service to use (bypass Pydantic validation)
     if platform_data:
         object.__setattr__(update_data, 'platform_data', platform_data)
     

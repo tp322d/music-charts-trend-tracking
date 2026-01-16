@@ -20,7 +20,6 @@ class ExternalAPIService:
         try:
             url = "https://itunes.apple.com/rss/topsongs/limit=200/json"
             if country != "us":
-                # iTunes has country-specific feeds
                 url = f"https://itunes.apple.com/{country}/rss/topsongs/limit=200/json"
             
             response = requests.get(url, timeout=10)

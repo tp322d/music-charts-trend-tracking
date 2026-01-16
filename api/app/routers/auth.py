@@ -36,29 +36,14 @@ async def login(
     """
     Obtain access and refresh tokens.
     
-    Uses OAuth2 password flow. Returns JWT tokens for authentication.
-    
-    **Note:** Use the "Authorize" button above to login via Swagger UI.
-    - Enter only **username** and **password**
-    - Leave **client_id** and **client_secret** EMPTY
-    
-    For API calls, send form data:
-    - **username**: User's username
-    - **password**: User's password
-    - **client_id**: (optional, can be empty)
-    - **client_secret**: (optional, can be empty)
-    
-    Returns access_token and refresh_token for API authentication.
+    Uses OAuth2 password flow.
     """
-    # OAuth2PasswordRequestForm automatically handles form data
-    # and provides username, password, client_id (optional), client_secret (optional)
     if not form_data.username or not form_data.password:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Username and password are required"
         )
     
-    # Create UserLogin schema from OAuth2 form data
     user_login = UserLogin(username=form_data.username, password=form_data.password)
     auth_service = AuthService()
     user = auth_service.authenticate_user(db, user_login)

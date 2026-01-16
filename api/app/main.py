@@ -7,7 +7,6 @@ from app.core.config import settings
 from app.routers import auth, charts, trends, websocket, data_sync
 from app.database.postgres import engine, Base
 
-# Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -22,7 +21,6 @@ app = FastAPI(
     }
 )
 
-# CORS middleware
 cors_origins = [origin.strip() for origin in settings.BACKEND_CORS_ORIGINS.split(",")]
 app.add_middleware(
     CORSMiddleware,
@@ -32,7 +30,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
 app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(charts.router, prefix=settings.API_V1_STR)
 app.include_router(trends.router, prefix=settings.API_V1_STR)

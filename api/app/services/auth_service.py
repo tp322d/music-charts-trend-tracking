@@ -22,21 +22,18 @@ class AuthService:
     @staticmethod
     def register_user(db: Session, user_create: UserCreate) -> User:
         """Register a new user."""
-        # Check if username already exists
         if db.query(User).filter(User.username == user_create.username).first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Username already registered"
             )
         
-        # Check if email already exists
         if db.query(User).filter(User.email == user_create.email).first():
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered"
             )
         
-        # Create new user
         hashed_password = get_password_hash(user_create.password)
         db_user = User(
             username=user_create.username,
@@ -71,7 +68,6 @@ class AuthService:
                 detail="User account is inactive"
             )
         
-        # Update last login
         user.last_login = datetime.utcnow()
         db.commit()
         
